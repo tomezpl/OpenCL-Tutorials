@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 		std::cout << "Runinng on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
 
 		//create a queue to which we will push commands for the device
-		cl::CommandQueue queue(context);
+		cl::CommandQueue queue(context, CL_QUEUE_PROFILING_ENABLE);
 
 		//2.2 Load & build the device code
 		cl::Program::Sources sources;
@@ -73,8 +73,9 @@ int main(int argc, char **argv) {
 		//Part 5 - device operations
 
 		//5.1 Copy arrays A and B to device memory
-		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, vector_size, &A[0]);
-		queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, vector_size, &B[0]);
+		cl::Event copyEventA, copyEventB;
+		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, vector_size, &A[0], nullptr, &copyEventA);
+		queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, vector_size, &B[0], nullptr, &copyEventB);
 
 		//5.2 Setup and execute the kernel (i.e. device code)
 		cl::Kernel kernel_add = cl::Kernel(program, "add");
@@ -82,14 +83,24 @@ int main(int argc, char **argv) {
 		kernel_add.setArg(1, buffer_B);
 		kernel_add.setArg(2, buffer_C);
 
-		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange);
+		cl::Event profEvent;
+
+		// the "global" parameter, cl::NDRange(vector_elements), 
+		// defines the number of kernel launches (how many time the kernel function will be executed, each time with an incremented global ID in range 0 < id < global)
+		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, nullptr, &profEvent);
 
 		//5.3 Copy the result from device to host
-		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, vector_size, &C[0]);
+		cl::Event readEventC;
+		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, vector_size, &C[0], nullptr, &readEventC);
 
-		std::cout << "A = " << A << std::endl;
-		std::cout << "B = " << B << std::endl;
-		std::cout << "C = " << C << std::endl;
+		//std::cout << "A = " << A << std::endl;
+		//std::cout << "B = " << B << std::endl;
+		//std::cout << "C = " << C << std::endl;
+
+		std::cout << "Copying buffer A to device memory took " << copyEventA.getProfilingInfo<CL_PROFILING_COMMAND_END>() - copyEventA.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
+		std::cout << "Copying buffer B to device memory took " << copyEventB.getProfilingInfo<CL_PROFILING_COMMAND_END>() - copyEventB.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
+		std::cout << "Reading buffer C took " << readEventC.getProfilingInfo<CL_PROFILING_COMMAND_END>() - readEventC.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
+		std::cout << "Kernel took " << profEvent.getProfilingInfo<CL_PROFILING_COMMAND_END>() - profEvent.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
