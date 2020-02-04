@@ -4,6 +4,11 @@ kernel void add(global const int* A, global const int* B, global int* C) {
 	C[id] = A[id] + B[id];
 }
 
+kernel void mult(global const int* A, global const int* B, global int* C) {
+	int id = get_global_id(0);
+	C[id] = A[id] * B[id];
+}
+
 //a simple smoothing kernel averaging values in a local window (radius 1)
 kernel void avg_filter(global const int* A, global int* B) {
 	int id = get_global_id(0);

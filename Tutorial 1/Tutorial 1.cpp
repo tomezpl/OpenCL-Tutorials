@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 		queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, vector_size, &B[0], nullptr, &copyEventB);
 
 		//5.2 Setup and execute the kernel (i.e. device code)
-		cl::Kernel kernel_add = cl::Kernel(program, "add");
+		cl::Kernel kernel_add = cl::Kernel(program, "mult");
 		kernel_add.setArg(0, buffer_A);
 		kernel_add.setArg(1, buffer_B);
 		kernel_add.setArg(2, buffer_C);
@@ -93,9 +93,9 @@ int main(int argc, char **argv) {
 		cl::Event readEventC;
 		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, vector_size, &C[0], nullptr, &readEventC);
 
-		//std::cout << "A = " << A << std::endl;
-		//std::cout << "B = " << B << std::endl;
-		//std::cout << "C = " << C << std::endl;
+		std::cout << "A = " << A << std::endl;
+		std::cout << "B = " << B << std::endl;
+		std::cout << "C = " << C << std::endl;
 
 		std::cout << "Copying buffer A to device memory took " << copyEventA.getProfilingInfo<CL_PROFILING_COMMAND_END>() - copyEventA.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
 		std::cout << "Copying buffer B to device memory took " << copyEventB.getProfilingInfo<CL_PROFILING_COMMAND_END>() - copyEventB.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
