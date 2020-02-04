@@ -78,8 +78,13 @@ int main(int argc, char **argv) {
 		queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, vector_size, &B[0], nullptr, &copyEventB);
 
 		//5.2 Setup and execute the kernel (i.e. device code)
-		cl::Kernel kernel_add = cl::Kernel(program, "mult");
-		kernel_add.setArg(0, buffer_A);
+		cl::Kernel kernel_mult = cl::Kernel(program, "mult");
+		kernel_mult.setArg(0, buffer_A);
+		kernel_mult.setArg(1, buffer_B);
+		kernel_mult.setArg(2, buffer_C);
+
+		cl::Kernel kernel_add = cl::Kernel(program, "add");
+		kernel_add.setArg(0, buffer_C);
 		kernel_add.setArg(1, buffer_B);
 		kernel_add.setArg(2, buffer_C);
 
@@ -87,7 +92,9 @@ int main(int argc, char **argv) {
 
 		// the "global" parameter, cl::NDRange(vector_elements), 
 		// defines the number of kernel launches (how many time the kernel function will be executed, each time with an incremented global ID in range 0 < id < global)
-		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, nullptr, &profEvent);
+		queue.enqueueNDRangeKernel(kernel_mult, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, nullptr, &profEvent);
+
+		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements));
 
 		//5.3 Copy the result from device to host
 		cl::Event readEventC;
