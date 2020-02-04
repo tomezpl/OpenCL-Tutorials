@@ -56,8 +56,15 @@ int main(int argc, char **argv) {
 
 		//Part 4 - memory allocation
 		//host - input
-		std::vector<int> A = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; //C++11 allows this type of initialisation
-		std::vector<int> B = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0 };
+		//std::vector<int> A = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; //C++11 allows this type of initialisation
+		//std::vector<int> B = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0 };
+		std::vector<int> A(100);
+		std::vector<int> B(100);
+		for (int i = 0; i < A.size(); i++)
+		{
+			A[i] = i;
+			B[i] = (i + 1) % 3;
+		}
 		
 		size_t vector_elements = A.size();//number of elements
 		size_t vector_size = A.size()*sizeof(int);//size in bytes
@@ -78,7 +85,7 @@ int main(int argc, char **argv) {
 		queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, vector_size, &B[0], nullptr, &copyEventB);
 
 		//5.2 Setup and execute the kernel (i.e. device code)
-		cl::Kernel kernel_mult = cl::Kernel(program, "mult");
+		cl::Kernel kernel_mult = cl::Kernel(program, "multadd");
 		kernel_mult.setArg(0, buffer_A);
 		kernel_mult.setArg(1, buffer_B);
 		kernel_mult.setArg(2, buffer_C);
@@ -88,13 +95,13 @@ int main(int argc, char **argv) {
 		kernel_add.setArg(1, buffer_B);
 		kernel_add.setArg(2, buffer_C);
 
-		cl::Event profEvent;
+		cl::Event profEventMult, profEventAdd;
 
 		// the "global" parameter, cl::NDRange(vector_elements), 
 		// defines the number of kernel launches (how many time the kernel function will be executed, each time with an incremented global ID in range 0 < id < global)
-		queue.enqueueNDRangeKernel(kernel_mult, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, nullptr, &profEvent);
+		queue.enqueueNDRangeKernel(kernel_mult, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, nullptr, &profEventMult);
 
-		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements));
+		//queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange, nullptr, &profEventAdd);
 
 		//5.3 Copy the result from device to host
 		cl::Event readEventC;
@@ -107,7 +114,7 @@ int main(int argc, char **argv) {
 		std::cout << "Copying buffer A to device memory took " << copyEventA.getProfilingInfo<CL_PROFILING_COMMAND_END>() - copyEventA.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
 		std::cout << "Copying buffer B to device memory took " << copyEventB.getProfilingInfo<CL_PROFILING_COMMAND_END>() - copyEventB.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
 		std::cout << "Reading buffer C took " << readEventC.getProfilingInfo<CL_PROFILING_COMMAND_END>() - readEventC.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
-		std::cout << "Kernel took " << profEvent.getProfilingInfo<CL_PROFILING_COMMAND_END>() - profEvent.getProfilingInfo<CL_PROFILING_COMMAND_START>() << "ns to complete." << std::endl;
+		std::cout << "Kernel took " << /*(profEventAdd.getProfilingInfo<CL_PROFILING_COMMAND_END>() - profEventAdd.getProfilingInfo<CL_PROFILING_COMMAND_START>()) +*/ (profEventMult.getProfilingInfo<CL_PROFILING_COMMAND_END>() - profEventMult.getProfilingInfo<CL_PROFILING_COMMAND_START>()) << "ns to complete." << std::endl;
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
