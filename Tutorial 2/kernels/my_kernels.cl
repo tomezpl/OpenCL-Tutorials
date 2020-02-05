@@ -9,7 +9,7 @@ kernel void filter_r(global const uchar* A, global uchar* B) {
 	int image_size = get_global_size(0)/3; //each image consists of 3 colour channels
 	int colour_channel = id / image_size; // 0 - red, 1 - green, 2 - blue
 
-	if (colour_channel == 0 && A[id] >= 127)
+	if (colour_channel == 0)
 		B[id] = A[id];
 	else
 		B[id] = 0;
@@ -29,6 +29,15 @@ kernel void identityND(global const uchar* A, global uchar* B) {
 	int id = x + y*width + c*image_size; //global id in 1D space
 
 	B[id] = A[id];
+}
+
+kernel void invert(global const uchar* A, global uchar* B)
+{
+	int id = get_global_id(0);
+	int image_size = get_global_size(0) / 3;
+	int colour_channel = id / image_size;
+
+	B[id] = 255 - A[id];
 }
 
 //2D averaging filter
