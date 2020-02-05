@@ -1,6 +1,12 @@
 //a simple OpenCL kernel which adds two vectors A and B together into a third vector C
 kernel void add(global const int* A, global const int* B, global int* C) {
 	int id = get_global_id(0);
+	int loc_id = get_local_id(0);
+	printf("work item global id = %d, local id = %d\n", id, loc_id);
+	if (id == 0)
+	{
+		printf("work group size = %d\n", get_local_size(0));
+	}
 	C[id] = A[id] + B[id];
 }
 
