@@ -144,6 +144,8 @@ int main(int argc, char** argv) {
 		//2.1 Select computing devices
 		cl::Context context = GetContext(platform_id, device_id);
 
+		cl::Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
+
 		//display the selected device
 		std::cout << "Runinng on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
 
@@ -195,6 +197,11 @@ int main(int argc, char** argv) {
 		kernel_add.setArg(0, buffer_A);
 		kernel_add.setArg(1, buffer_B);
 		kernel_add.setArg(2, buffer_C);
+
+		// This prints the preferred smallest work group size
+		cerr << "workGroupInfo (preferred work group size): " << kernel_add.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device) << endl;
+		// This prints the maximum work group size. This should be divisible by the above value.
+		cerr << "workGroupInfo (work group size): " << kernel_add.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device) << endl;
 
 		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange);
 
