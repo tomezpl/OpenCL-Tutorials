@@ -172,8 +172,8 @@ int main(int argc, char** argv) {
 
 		//Part 3 - memory allocation
 		//host - input
-		std::vector<int> A = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; //C++11 allows this type of initialisation
-		std::vector<int> B = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0 };
+		std::vector<int> A = { 0, 1, 3, 6, 10, 15, 21, 28, 36, 45 }; //C++11 allows this type of initialisation
+		std::vector<int> B(A.size());
 
 		size_t vector_elements = A.size();//number of elements
 		size_t vector_size = A.size() * sizeof(int);//size in bytes
@@ -190,13 +190,12 @@ int main(int argc, char** argv) {
 
 		//4.1 Copy arrays A and B to device memory
 		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, vector_size, &A[0]);
-		queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, vector_size, &B[0]);
 
 		//4.2 Setup and execute the kernel (i.e. device code)
-		cl::Kernel kernel_add = cl::Kernel(program, "add");
+		cl::Kernel kernel_add = cl::Kernel(program, "avg_filter");
 		kernel_add.setArg(0, buffer_A);
 		kernel_add.setArg(1, buffer_B);
-		kernel_add.setArg(2, buffer_C);
+		//kernel_add.setArg(2, buffer_C);
 
 		// This prints the preferred smallest work group size
 		cerr << "workGroupInfo (preferred work group size): " << kernel_add.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device) << endl;
@@ -205,12 +204,13 @@ int main(int argc, char** argv) {
 
 		queue.enqueueNDRangeKernel(kernel_add, cl::NullRange, cl::NDRange(vector_elements), cl::NullRange);
 
-		//4.3 Copy the result from device to host
-		queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, vector_size, &C[0]);
+		//4.3 Copy the result from device to host			
+		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, vector_size, &B[0]);
+		//queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, vector_size, &C[0]);
 
 		std::cout << "A = " << A << std::endl;
 		std::cout << "B = " << B << std::endl;
-		std::cout << "C = " << C << std::endl;
+		//std::cout << "C = " << C << std::endl;
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
