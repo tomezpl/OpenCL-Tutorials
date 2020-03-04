@@ -81,8 +81,8 @@ int main(int argc, char **argv) {
 		size_t nr_groups = input_elements / local_size;
 
 		//host - output
-		std::vector<mytype> B(input_elements);
-		size_t output_size = B.size()*sizeof(mytype);//size in bytes
+		std::vector<mytype> B(1);
+		size_t output_size = sizeof(mytype);//size in bytes
 
 		//device - buffers
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
@@ -95,10 +95,10 @@ int main(int argc, char **argv) {
 		queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);//zero B buffer on device memory
 
 		//4.2 Setup and execute all kernels (i.e. device code)
-		cl::Kernel kernel_1 = cl::Kernel(program, "reduce_add_2");
+		cl::Kernel kernel_1 = cl::Kernel(program, "reduce_add_4");
 		kernel_1.setArg(0, buffer_A);
 		kernel_1.setArg(1, buffer_B);
-//		kernel_1.setArg(2, cl::Local(local_size*sizeof(mytype)));//local memory size
+		kernel_1.setArg(2, cl::Local(local_size*sizeof(mytype)));//local memory size
 
 		//call all kernels in a sequence
 		queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
