@@ -91,7 +91,7 @@ kernel void reduce_add_4(global const int* A, global int* B, local int* scratch)
 	//serial operation! but works for any group size
 	//copy the cache to output array
 	if (!lid) {
-		atomic_add(&B[0],scratch[lid]);
+		atomic_add(B,scratch[lid]);
 	}
 }
 
